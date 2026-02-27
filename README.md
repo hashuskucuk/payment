@@ -43,27 +43,27 @@ Dashboard: aktif alt sekme, bakiye, ödeme/çekim sonrası güncellemeler
 
 ## Proje Yapisi
 
-lib/
-  main.dart
-  app.dart
-  components/
-    custom_button.dart
-    custom_input.dart
-  screens/
-    login_screen.dart
-    dashboard_screen.dart
-    payment_screen.dart
-    register_screen.dart
-    forgot_password.dart
-  services/
-    mock_api_service.dart
-  utils/
-    input_formatters.dart
-    validators.dart
-  widgets/
-    transaction_item.dart
-test/
-  widget_test.dart
+- lib/
+  - main.dart
+  - app.dart
+  - components/
+    - custom_button.dart
+    - custom_input.dart
+  - screens/
+    - login_screen.dart
+    - dashboard_screen.dart
+    - payment_screen.dart
+    - register_screen.dart
+    - forgot_password.dart
+  - services/
+    - mock_api_service.dart
+  - utils/
+    - input_formatters.dart
+    - validators.dart
+  - widgets/
+    - transaction_item.dart
+- test/
+  - widget_test.dart
 
 Klasör Yapısı
 - screens/: Sayfa seviyesindeki UI ve kullanıcı akışı

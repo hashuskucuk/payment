@@ -1,5 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
+/// Kullanıcı kayıt işlemlerinin gerçekleştirildiği ekran bileşeni.
+/// Modern bir üst bar tasarımı ve aşağıdan yukarıya açılan beyaz form alanına sahiptir.
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -8,24 +10,34 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  /// Form üzerindeki tüm validasyonları ve durumu kontrol eden anahtar.
   final _formKey = GlobalKey<FormState>();
+  
+  /// Kullanıcı verilerini toplamak ve işlemek için kullanılan kontrolcüler.
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  /// Kullanıcı sözleşme onayı ve işlem devam ediyor (loading) durumu takibi.
   bool _isAgreed = false;
   bool _isLoading = false;
 
   @override
   void dispose() {
+    /// Memory leak (bellek sızıntısı) önlemek için kontrolcüler serbest bırakılır.
     _nameController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
+  /// Kayıt işlemini başlatan asenkron metot.
+  /// Form validasyonu, sözleşme onayı ve sahte bir API gecikmesi içerir.
   Future<void> _submit() async {
+    // Önce form üzerindeki tüm TextFormField'ların validator metotlarını çalıştırır.
     if (!_formKey.currentState!.validate()) return;
+    
+    // Sözleşme onayı kontrolü (İş mantığı gereği zorunludur).
     if (!_isAgreed) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Devam etmek için sözleşmeyi onaylayın.')),
@@ -34,6 +46,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     setState(() => _isLoading = true);
+    
+    // API simülasyonu (Ajanın test etmesi için eklenen gecikme).
     await Future.delayed(const Duration(seconds: 1));
 
     if (!mounted) return;
@@ -43,11 +57,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       const SnackBar(content: Text('Kayıt başarılı. Şimdi giriş yapabilirsiniz.')),
     );
 
+    // Başarılı kayıttan sonra bir önceki ekrana (genelde login) döner.
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    // Kurumsal kimliğin ana mor tonu.
     const primary = Color(0xFF3D31B4);
 
     return Scaffold(
@@ -61,6 +77,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         margin: const EdgeInsets.only(top: 20),
         decoration: const BoxDecoration(
           color: Colors.white,
+          // Modern, yuvarlatılmış üst köşeler.
           borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
         ),
         child: SingleChildScrollView(
@@ -71,6 +88,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 const Text('Yeni hesap oluşturun', style: TextStyle(color: Colors.grey)),
                 const SizedBox(height: 24),
+                
+                // İsim soyisim girişi ve boşluk/format kontrolü.
                 _buildInput(
                   controller: _nameController,
                   label: 'Ad Soyad',
@@ -83,6 +102,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
+                
+                // Telefon girişi: Sadece rakam kabul eden klavye tipiyle.
                 _buildInput(
                   controller: _phoneController,
                   label: 'Telefon',
@@ -96,6 +117,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
+                
+                // Şifre girişi: Karakter gizleme özelliği aktif.
                 _buildInput(
                   controller: _passwordController,
                   label: 'Şifre',
@@ -108,6 +131,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 10),
+                
+                // Gizlilik Politikası Onay Kutusu
                 Row(
                   children: [
                     Checkbox(
@@ -124,6 +149,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ],
                 ),
                 const SizedBox(height: 20),
+                
+                // Kayıt Butonu: İşlem sürerken CircularProgressIndicator gösterir.
                 SizedBox(
                   width: double.infinity,
                   height: 54,
@@ -150,6 +177,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  /// Tekrarlanan giriş alanlarını yöneten yardımcı widget metodu.
   Widget _buildInput({
     required TextEditingController controller,
     required String label,

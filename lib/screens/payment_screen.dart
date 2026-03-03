@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../components/custom_button.dart';
@@ -6,6 +6,8 @@ import '../components/custom_input.dart';
 import '../services/mock_api_service.dart';
 import '../utils/input_formatters.dart';
 
+/// Ödeme işlemlerinin yönetildiği ana ekran bileşeni.
+/// [amount] Zorunlu toplam tutar, [onPaymentSuccess] işlem başarılı olduğunda tetiklenen callback.
 class PaymentScreen extends StatefulWidget {
   final double amount;
   final ValueChanged<double>? onPaymentSuccess;
@@ -27,13 +29,19 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
+  /// Form validasyonu ve durum takibi için kullanılan anahtar.
   final _formKey = GlobalKey<FormState>();
+  
+  /// Input yönetimi ve veriye erişim için tanımlanan kontrolcüler.
   late final TextEditingController _holderController;
   late final TextEditingController _cardController;
   late final TextEditingController _expiryController;
   final _cvvController = TextEditingController();
+  
+  /// Ödeme validasyonu ve API simülasyonu sağlayan servis.
   final _api = const MockApiService();
 
+  /// UI durumlarını (yüklenme ve form doluluğu) yöneten state değişkenleri.
   bool _isLoading = false;
   bool _isFormComplete = false;
 
@@ -44,6 +52,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     _cardController = TextEditingController(text: widget.initialCardNumber);
     _expiryController = TextEditingController(text: widget.initialExpiry);
 
+    /// Dinamik buton durumu güncellemesi için listener atamaları.
     _holderController.addListener(_updateFormState);
     _cardController.addListener(_updateFormState);
     _expiryController.addListener(_updateFormState);
@@ -53,6 +62,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   @override
   void dispose() {
+    /// Memory leak önlenmesi için kontrolcülerin ve dinleyicilerin temizlenmesi.
     _holderController
       ..removeListener(_updateFormState)
       ..dispose();
@@ -68,19 +78,25 @@ class _PaymentScreenState extends State<PaymentScreen> {
     super.dispose();
   }
 
+  /// Formdaki zorunlu alanların doluluk ve format uygunluğunu kontrol eder.
+  /// Butonun [onPressed] durumunu aktif/pasif hale getirmek için kullanılır.
   void _updateFormState() {
     final holder = _holderController.text.trim();
     final cardDigits = _cardController.text.replaceAll(RegExp(r'\D'), '');
     final expiry = _expiryController.text.trim();
     final cvv = _cvvController.text.trim();
 
-    final isComplete = holder.isNotEmpty && cardDigits.length == 16 && expiry.length == 5 && cvv.length == 3;
+    final isComplete = holder.isNotEmpty && 
+                       cardDigits.length == 16 && 
+                       expiry.length == 5 && 
+                       cvv.length == 3;
 
     if (_isFormComplete != isComplete) {
       setState(() => _isFormComplete = isComplete);
     }
   }
 
+  /// Sayısal tutarı yerel para birimi formatına (binlik ayraç ve virgül) dönüştürür.
   String _formatAmount(double amount) {
     final fixed = amount.toStringAsFixed(2);
     final parts = fixed.split('.');
@@ -99,6 +115,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return '${buffer.toString()},$decimal TL';
   }
 
+  /// Ödeme işlemini başlatan asenkron metot.
+  /// Validasyon kontrolü yapar, API servisini çağırır ve sonucu kullanıcıya bildirir.
   Future<void> _submit() async {
     FocusScope.of(context).unfocus();
 
@@ -110,6 +128,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     if (!mounted) return;
     setState(() => _isLoading = false);
 
+    /// İşlem sonucu modalı.
     await showDialog<void>(
       context: context,
       builder: (_) => AlertDialog(
@@ -123,6 +142,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
     if (!mounted) return;
 
+    /// Callback tetiklenmesi ve ekranın kapatılması.
     widget.onPaymentSuccess?.call(widget.amount);
     Navigator.pop(context);
   }
@@ -140,6 +160,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         foregroundColor: Colors.black,
       ),
       body: SingleChildScrollView(
+        /// Klavye etkileşimlerinde padding değerini dinamik ayarlar.
         padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + MediaQuery.of(context).viewInsets.bottom),
         child: Form(
           key: _formKey,
@@ -148,16 +169,22 @@ class _PaymentScreenState extends State<PaymentScreen> {
             children: [
               const Text('Toplam Tutar', style: TextStyle(fontSize: 14, color: Colors.grey)),
               const SizedBox(height: 6),
+              /// Tutar gösterim alanı. Binlik ayraçlı format kullanılır.
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-                decoration: BoxDecoration(color: const Color(0xFFF5F6FA), borderRadius: BorderRadius.circular(14)),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F6FA), 
+                  borderRadius: BorderRadius.circular(14)
+                ),
                 child: Text(
                   _formatAmount(widget.amount),
                   style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: primary),
                 ),
               ),
               const SizedBox(height: 18),
+              
+              /// İsim girişi: Sadece alfabetik karakterlere izin verir.
               CustomInput(
                 controller: _holderController,
                 label: 'Kart Üzerindeki İsim',
@@ -172,6 +199,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 )['cardHolder'],
               ),
               const SizedBox(height: 14),
+
+              /// Kart Numarası: Maskeleme ve basamak kontrolü içerir.
               CustomInput(
                 controller: _cardController,
                 label: 'Kart Numarası',
@@ -187,6 +216,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 )['cardNumber'],
               ),
               const SizedBox(height: 14),
+
+              /// SKT ve CVV: Yatayda hizalanmış, özel formatlı giriş alanları.
               Row(
                 children: [
                   Expanded(
@@ -226,6 +257,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ],
               ),
               const SizedBox(height: 24),
+
+              /// İşlem butonu: Loading ve eksik veri durumlarında pasifleşir.
               CustomButton(
                 label: 'Ödemeyi Tamamla',
                 isLoading: _isLoading,

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../widgets/transaction_item.dart';
 import 'login_screen.dart';
@@ -12,12 +12,14 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  // Uygulama genelinde tutarlılık olması için renkleri burada sabit tutuyorum.
   static const Color _primary = Color(0xFF3D31B4);
   static const Color _bg = Color(0xFFF0F2F8);
 
-  int _selectedTab = 0;
-  double _balance = 3469.52;
+  int _selectedTab = 0; // Alt menüdeki geçişleri kontrol etmek için index tutuyorum.
+  double _balance = 3469.52; // Simülasyon amaçlı başlangıç bakiyesi.
 
+  // Ödeme ekranına giderken verileri buradan yolluyorum.
   void _openPayment() {
     Navigator.push(
       context,
@@ -28,6 +30,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           initialCardNumber: '4756 1234 5678 9018',
           initialExpiry: '12/30',
           onPaymentSuccess: (amount) {
+            // Ödeme başarılı dönerse bakiyeyi anlık güncelliyoruz.
             setState(() => _balance += amount);
           },
         ),
@@ -35,13 +38,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // Para çekme işlemi için asenkron bir yapı kurdum, çünkü kullanıcıdan veri gelmesini bekliyoruz.
   Future<void> _openWithdraw() async {
     final amount = await Navigator.push<double>(
       context,
       MaterialPageRoute(builder: (_) => const _WithdrawScreen()),
     );
+    
+    // Kullanıcı vazgeçip geri dönerse veya tutar girmezse işlem yapma.
     if (!mounted || amount == null) return;
 
+    // Bakiyeden fazla çekim yapılmasını engellemek için basit bir kontrol.
     if (amount > _balance) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Yetersiz bakiye.')));
       return;
@@ -53,6 +60,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // Henüz hazır olmayan özellikler için bilgilendirme penceresi açan genel bir fonksiyon.
   void _showFeature(String title, String message) {
     Navigator.push(
       context,
@@ -65,8 +73,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       backgroundColor: _bg,
       body: SafeArea(
+        // Notch (çentik) ve alt bar ile çakışmaması için SafeArea kullandım.
         bottom: false,
         child: IndexedStack(
+          // Sekmeler arası geçişte sayfa durumunu (scroll pozisyonu vb.) korumak için IndexedStack tercih ettim.
           index: _selectedTab,
           children: [
             _buildHome(),
@@ -80,11 +90,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // --- ANA SAYFA GÖRÜNÜMÜ ---
   Widget _buildHome() {
     return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
+      physics: const BouncingScrollPhysics(), // Kaydırma hissi daha akıcı olsun diye iOS tarzı efekt verdim.
       child: Column(
         children: [
+          // Üstteki mavi panel ve kullanıcı bilgileri.
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(24, 28, 24, 30),
@@ -134,14 +146,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(height: 26),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 22),
-            child: _buildCard(),
+            child: _buildCard(), // Kredi kartı tasarımını temiz kod için ayrı metoda taşıdım.
           ),
           const SizedBox(height: 34),
+          // Uygulama aksiyon butonları.
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 22),
             child: GridView.count(
               shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
+              physics: const NeverScrollableScrollPhysics(), // Column içinde olduğu için scroll'u kapattım.
               crossAxisCount: 3,
               mainAxisSpacing: 26,
               crossAxisSpacing: 16,
@@ -170,6 +183,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // --- BANKA KARTI TASARIMI ---
   Widget _buildCard() {
     return Container(
       height: 210,
@@ -181,6 +195,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           end: Alignment.bottomRight,
         ),
         boxShadow: [
+          // Kartın havada durma efektini bu shadow ile sağladım.
           BoxShadow(color: Colors.blue.withValues(alpha: 0.3), blurRadius: 25, offset: const Offset(0, 15)),
         ],
       ),
@@ -188,6 +203,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         borderRadius: BorderRadius.circular(35),
         child: Stack(
           children: [
+            // Kartın arka planındaki dekoratif daire detayı.
             Positioned(
               top: -50,
               right: -50,
@@ -206,10 +222,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Icon(Icons.contactless, color: Colors.white, size: 28),
                     ],
                   ),
-                  const Text('4756  ****  ****  9018', style: TextStyle(color: Colors.white, fontSize: 20, letterSpacing: 2)),
+                  const Text('4756  **** **** 9018', style: TextStyle(color: Colors.white, fontSize: 20, letterSpacing: 2)),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      // Dinamik bakiye buraya basılıyor.
                       Text('TRY ${_balance.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.bold)),
                       const Text('VISA', style: TextStyle(color: Colors.white, fontStyle: FontStyle.italic, fontWeight: FontWeight.bold, fontSize: 22)),
                     ],
@@ -223,6 +240,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // --- IZGARA BUTONLARI (ACTION) ---
   Widget _buildAction(IconData icon, String label, Color accent, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
@@ -235,6 +253,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Stack(
               alignment: Alignment.center,
               children: [
+                // İkonun altındaki hafif renkli parlama efekti.
                 Container(
                   width: 70,
                   height: 70,
@@ -284,12 +303,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // --- İŞLEM GEÇMİŞİ LİSTESİ ---
   Widget _buildTransactions() {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
       children: const [
         Text('İşlem Geçmişi', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         SizedBox(height: 16),
+        // Tekrar kullanılabilir widget'ı burada çağırıyorum.
         TransactionItem(title: 'Market Alışverişi', date: '27 Feb 2026', amount: '- TRY 385.40', icon: Icons.shopping_bag_outlined, iconColor: Colors.redAccent),
         TransactionItem(title: 'Maaş Ödemesi', date: '26 Feb 2026', amount: '+ TRY 22,000.00', icon: Icons.account_balance_wallet_outlined, iconColor: Colors.green),
         TransactionItem(title: 'Elektrik Faturası', date: '24 Feb 2026', amount: '- TRY 640.00', icon: Icons.flash_on_outlined, iconColor: Colors.orange),
@@ -297,6 +318,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // --- BİLDİRİM SAYFASI ---
   Widget _buildMessages() {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
@@ -326,6 +348,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // --- AYARLAR SAYFASI ---
   Widget _buildSettings() {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
@@ -340,6 +363,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           height: 50,
           child: OutlinedButton.icon(
             onPressed: () {
+              // Çıkış yapınca geri dönmeyi engellemek için Navigator.pushAndRemoveUntil kullandım.
               Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginScreen()), (route) => false);
             },
             icon: const Icon(Icons.logout, color: Colors.redAccent),
@@ -366,6 +390,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // --- ALT NAVİGASYON BAR ---
   Widget _buildBottomNav() {
     return Container(
       height: 90,
@@ -413,6 +438,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
+// --- BİLDİRİM BALONU (BADGE) ---
 class _NotificationBadge extends StatelessWidget {
   const _NotificationBadge();
 
@@ -435,6 +461,7 @@ class _NotificationBadge extends StatelessWidget {
   }
 }
 
+// --- ÖZELLİK DETAY EKRANI ---
 class _InfoScreen extends StatelessWidget {
   final String title;
   final String message;
@@ -458,6 +485,7 @@ class _InfoScreen extends StatelessWidget {
   }
 }
 
+// --- TRANSFER EKRANI ---
 class _TransferScreen extends StatefulWidget {
   const _TransferScreen();
 
@@ -471,6 +499,7 @@ class _TransferScreenState extends State<_TransferScreen> {
 
   @override
   void dispose() {
+    // Bellek sızıntısını önlemek için controller'ları dispose etmeyi unutmamak lazım.
     _nameController.dispose();
     _amountController.dispose();
     super.dispose();
@@ -499,6 +528,7 @@ class _TransferScreenState extends State<_TransferScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
+                  // Basit bir boş kontrolü yapıp kullanıcıyı uyarıyorum.
                   if (_nameController.text.trim().isEmpty || _amountController.text.trim().isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Alıcı ve tutar zorunlu.')));
                     return;
@@ -516,6 +546,7 @@ class _TransferScreenState extends State<_TransferScreen> {
   }
 }
 
+// --- PARA ÇEKME EKRANI ---
 class _WithdrawScreen extends StatefulWidget {
   const _WithdrawScreen();
 
@@ -550,11 +581,13 @@ class _WithdrawScreenState extends State<_WithdrawScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
+                  // Virgül ile girilen sayıları noktaya çevirip double'a parse ediyorum.
                   final amount = double.tryParse(_amountController.text.replaceAll(',', '.'));
                   if (amount == null || amount <= 0) {
                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Geçerli tutar girin.')));
                     return;
                   }
+                  // Girilen tutarı bir önceki ekrana geri gönderiyorum.
                   Navigator.pop(context, amount);
                 },
                 child: const Text('Onayla'),
@@ -567,6 +600,7 @@ class _WithdrawScreenState extends State<_WithdrawScreen> {
   }
 }
 
+// --- FATURA ÖDEME LİSTESİ ---
 class _BillsScreen extends StatelessWidget {
   const _BillsScreen();
 
@@ -602,6 +636,7 @@ class _BillsScreen extends StatelessWidget {
   }
 }
 
+// --- BİRİKİM HEDEFLERİ ---
 class _SavingsScreen extends StatelessWidget {
   const _SavingsScreen();
 
@@ -616,6 +651,7 @@ class _SavingsScreen extends StatelessWidget {
           children: [
             const Text('Hedef: Tatil Fonu', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
+            // İlerlemeyi görselleştirmek için progress bar kullandım.
             ClipRRect(borderRadius: BorderRadius.circular(10), child: const LinearProgressIndicator(value: 0.62, minHeight: 10)),
             const SizedBox(height: 10),
             const Text('TRY 31,000 / TRY 50,000'),
